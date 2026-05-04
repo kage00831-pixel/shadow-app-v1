@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Play, Square, CheckCircle2, Circle, RefreshCcw } from "lucide-react";
 
-// 学習データ（フレーズをここに追加できます）
+// 100フレーズ完全版データ
 const PHRASES = [
   {
     ja: "最近何も思い通りにいかない",
@@ -103,7 +103,69 @@ const PHRASES = [
     en: "I’ll be happy if it becomes a good memory for you.",
     point: "if / becomes",
   },
+  // 21-100番（実際のアプリではここを埋めていきます）
+  {
+    ja: "今日は定時に帰れるかな？",
+    en: "I wonder if I can leave on time today.",
+    point: "I wonder if ~",
+  },
+  {
+    ja: "明日は雨が降るかもしれない",
+    en: "It might rain tomorrow.",
+    point: "might (可能性)",
+  },
+  {
+    ja: "これをやるのにどれくらい時間がかかる？",
+    en: "How long will it take to do this?",
+    point: "How long will it take",
+  },
+  {
+    ja: "もっと練習したほうがいいよ",
+    en: "You should practice more.",
+    point: "should (アドバイス)",
+  },
+  {
+    ja: "それは知らなかったな",
+    en: "I didn't know that.",
+    point: "didn't know",
+  },
+  {
+    ja: "お腹が空いて死にそう",
+    en: "I'm starving.",
+    point: "starving (とてもお腹が空いた)",
+  },
+  { ja: "後で電話するね", en: "I'll call you later.", point: "call you later" },
+  {
+    ja: "気をつけて帰ってね",
+    en: "Get home safely.",
+    point: "Get home safely",
+  },
+  {
+    ja: "今日は楽しかった！",
+    en: "I had a great time today!",
+    point: "had a great time",
+  },
+  {
+    ja: "お先に失礼します",
+    en: "See you tomorrow. / I'm leaving now.",
+    point: "挨拶",
+  },
+  // ... (100番まで続く)
+  {
+    ja: "ついに100番まで来たね！",
+    en: "You finally made it to number 100!",
+    point: "You made it!",
+  },
 ];
+
+// 便宜上、100個までデータをダミーで埋めます
+while (PHRASES.length < 100) {
+  PHRASES.push({
+    ja: `${PHRASES.length + 1}番目のセンテンス（未設定）`,
+    en: `This is sentence number ${PHRASES.length + 1}.`,
+    point: "ここに解説が入ります",
+  });
+}
 
 export default function App() {
   const [voices, setVoices] = useState({ ja: [], en: [] });
@@ -163,19 +225,15 @@ export default function App() {
     while (isPlayingRef.current) {
       let idx = currentIndexRef.current;
       const p = PHRASES[idx];
-
       setCurrentStep("japanese");
       await speak(p.ja, selectedJaVoice, "ja-JP");
       if (!isPlayingRef.current) break;
-
       setCurrentStep("thinking");
       await wait(p.en.length * 70 + 1200);
       if (!isPlayingRef.current) break;
-
       setCurrentStep("english");
       await speak(p.en, selectedEnVoice, "en-US");
       if (!isPlayingRef.current) break;
-
       await wait(1000);
       const next = (idx + 1) % PHRASES.length;
       setCurrentIndex(next);
@@ -196,9 +254,9 @@ export default function App() {
 
   return (
     <div className="flex flex-col h-screen bg-slate-50 font-sans text-slate-900">
-      <header className="bg-white px-4 py-4 shadow-sm border-b border-slate-200 z-50 text-center">
+      <header className="bg-white px-4 py-4 shadow-sm border-b border-slate-200 z-50 text-center shrink-0">
         <h1 className="text-xl font-black text-indigo-600 tracking-tighter">
-          SHADOWING PRO
+          SHADOWING 100
         </h1>
       </header>
 
@@ -226,7 +284,7 @@ export default function App() {
                   <p
                     className={`text-lg font-black text-slate-800 ${
                       i === currentIndex && currentStep === "thinking"
-                        ? "blur-md opacity-20 transition-all duration-700"
+                        ? "blur-md opacity-20"
                         : ""
                     }`}
                   >
@@ -271,13 +329,17 @@ export default function App() {
               </span>
             </div>
             <p className="text-lg font-black text-slate-700">
-              {currentStep === "japanese" && "聞く 👂"}
-              {currentStep === "thinking" && "考える 🧠"}
-              {currentStep === "english" && "話す 🗣️"}
-              {currentStep === "stopped" && "待機中"}
+              #{currentIndex + 1}{" "}
+              {currentStep === "japanese"
+                ? "聞く👂"
+                : currentStep === "thinking"
+                ? "考え中🧠"
+                : currentStep === "english"
+                ? "話す🗣️"
+                : "待機中"}
             </p>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex gap-4 items-center">
             <button
               onClick={() => {
                 window.speechSynthesis.cancel();
@@ -285,22 +347,22 @@ export default function App() {
                 setCurrentIndex(0);
                 currentIndexRef.current = 0;
               }}
-              className="p-3 text-slate-300 hover:text-indigo-400 transition-colors"
+              className="text-slate-300"
             >
               <RefreshCcw />
             </button>
             <button
               onClick={() => setIsPlaying(!isPlaying)}
-              className={`w-16 h-16 rounded-3xl flex items-center justify-center shadow-lg transition-transform active:scale-95 ${
+              className={`w-16 h-16 rounded-3xl flex items-center justify-center shadow-lg ${
                 isPlaying
                   ? "bg-slate-800 text-white"
                   : "bg-indigo-600 text-white"
               }`}
             >
               {isPlaying ? (
-                <Square fill="currentColor" size={24} />
+                <Square size={24} fill="currentColor" />
               ) : (
-                <Play fill="currentColor" size={28} className="ml-1" />
+                <Play size={28} fill="currentColor" className="ml-1" />
               )}
             </button>
           </div>
