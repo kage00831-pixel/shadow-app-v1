@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { Play, Square, CheckCircle2, Circle, RefreshCcw } from "lucide-react";
 
 // 魂の100フレーズ完全版データ
@@ -505,8 +505,6 @@ export default function ShadowingApp() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [completed, setCompleted] = useState({});
-  const audioRef = useRef(null);
-  const speechRef = useRef(null);
 
   useEffect(() => {
     const saved = localStorage.getItem("shadowing-progress");
@@ -518,34 +516,71 @@ export default function ShadowingApp() {
     localStorage.setItem("shadowing-progress", JSON.stringify(newCompleted));
   };
 
-  const speak = (text) => {
-    if (speechRef.current) window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = "en-US";
-    utterance.rate = 0.8;
-    utterance.onend = () => {
-      if (isPlaying && currentIndex < PHRASES.length - 1) {
-        setTimeout(() => setCurrentIndex((prev) => prev + 1), 1000);
-      } else {
-        setIsPlaying(false);
-      }
-    };
-    speechRef.current = utterance;
-    window.speechSynthesis.speak(utterance);
-  };
-
-  useEffect(() => {
-    if (isPlaying) {
-      speak(PHRASES[currentIndex].en);
-    } else {
-      window.speechSynthesis.cancel();
-    }
-  }, [currentIndex, isPlaying]);
-
   const toggleComplete = (index) => {
     const newCompleted = { ...completed, [index]: !completed[index] };
     saveProgress(newCompleted);
   };
+
+  // ⭐️ ここが修正版の音声プログラムです（日本語→1秒待つ→英語→1秒待つ→次へ）
+  useEffect(() => {
+    let isCancelled = false;
+
+    const playSequence = async () => {
+      if (!isPlaying) return;
+      window.speechSynthesis.cancel();
+
+      const currentPhrase = PHRASES[currentIndex];
+
+      // ① 日本語を再生
+      await new Promise((resolve) => {
+        const utJa = new SpeechSynthesisUtterance(currentPhrase.ja);
+        utJa.lang = "ja-JP";
+        utJa.rate = 1.0;
+        utJa.onend = resolve;
+        utJa.onerror = resolve;
+        if (!isCancelled) window.speechSynthesis.speak(utJa);
+      });
+
+      if (isCancelled) return;
+
+      // ② 1秒待つ
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      if (isCancelled) return;
+
+      // ③ 英語を再生（0.8倍速）
+      await new Promise((resolve) => {
+        const utEn = new SpeechSynthesisUtterance(currentPhrase.en);
+        utEn.lang = "en-US";
+        utEn.rate = 0.8;
+        utEn.onend = resolve;
+        utEn.onerror = resolve;
+        if (!isCancelled) window.speechSynthesis.speak(utEn);
+      });
+
+      if (isCancelled) return;
+
+      // ④ 次へ行く前に1秒待機
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      if (isCancelled) return;
+
+      if (currentIndex < PHRASES.length - 1) {
+        setCurrentIndex((prev) => prev + 1);
+      } else {
+        setIsPlaying(false);
+      }
+    };
+
+    if (isPlaying) {
+      playSequence();
+    } else {
+      window.speechSynthesis.cancel();
+    }
+
+    return () => {
+      isCancelled = true;
+      window.speechSynthesis.cancel();
+    };
+  }, [currentIndex, isPlaying]);
 
   return (
     <div className="min-h-screen bg-gray-50 pb-32">
