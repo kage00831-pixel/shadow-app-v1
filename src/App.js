@@ -544,7 +544,7 @@ export default function ShadowingApp() {
       if (isCancelled) return;
 
       // ② 1秒待つ
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 3000));
       if (isCancelled) return;
 
       // ③ 英語を再生（0.8倍速）
@@ -560,7 +560,7 @@ export default function ShadowingApp() {
       if (isCancelled) return;
 
       // ④ 次へ行く前に1秒待機
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 3000));
       if (isCancelled) return;
 
       if (currentIndex < PHRASES.length - 1) {
