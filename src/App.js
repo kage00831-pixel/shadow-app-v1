@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Play, Square, CheckCircle2, Circle, RefreshCcw } from "lucide-react";
+import { Play, Square, CheckCircle2, RefreshCcw } from "lucide-react";
 
 const PHRASES = [
   { ja: "最近何も思い通りにいかない", en: "Things just haven't been going my way lately.", point: "have been + ing (最近ずっと〜)" },
@@ -21,7 +21,7 @@ const PHRASES = [
   { ja: "それ使って何ができるの？", en: "What can you do with that?", point: "with that（それを使って）" },
   { ja: "それ相手に伝わっている？", en: "Is that getting across to the other person?", point: "get across（伝わる）" },
   { ja: "昨日の試合はマジで面白かった！俺は超興奮したよ！", en: "Last night’s game was amazing! I was so excited!", point: "excited（興奮した）" },
-  { ja: "彼が来るとは思えない", en: "I don’t think he’ll come.", point: "I don't think ~（〜とは思わない）" },
+  { ja: "彼が来るとは思えない", en: "I don’t think he’ll come.", point: "I don’t think ~（〜とは思わない）" },
   { ja: "全ての人が彼を好きなわけじゃないよね？", en: "Not everyone likes him, right?", point: "Not everyone（全員が〜ではない）" },
   { ja: "地図読むの苦手なんだよね", en: "I’m not good at reading maps.", point: "be not good at ~ing" },
   { ja: "今日疲れてるけど、英語を話そうと頑張ってるよ", en: "I’m kind of tired, but I’m trying to speak in English.", point: "try to ~（〜しようとする）" },
@@ -65,7 +65,7 @@ const PHRASES = [
   { ja: "雨が降ると、動きづらくなるよね", en: "When it rains, it’s hard to move.", point: "it's hard to ~（〜しづらい）" },
   { ja: "モチベーションって日々変わるよね？", en: "Motivation changes day by day, right?", point: "day by day（日々）" },
   { ja: "ちょっと面倒な奴がいてさ、話すのがしんどいんだよね", en: "There’s this guy who’s a pain, and I don’t like talking to him.", point: "someone who's a pain（面倒な人）" },
-  { ja: "生きがんなよ！（調子に乗るなよ）", en: "Don't be full of yourself!", point: "口語表現" },
+  { ja: "生きがん（調子に乗る）なよ！", en: "Don't be full of yourself!", point: "口語表現" },
   { ja: "今後の方向性に迷ってるんだ", en: "I’m not sure what to do next.", point: "what to do next（次に何をすべきか）" },
   { ja: "疲れてくると、集中するのが難しくなるよね", en: "If I’m tired, it’s hard to focus.", point: "hard to focus（集中しづらい）" },
   { ja: "今日中にこのメールを仕上げなきゃいけないんだ", en: "I have to finish this email today.", point: "have to（〜しなきゃいけない）" },
@@ -137,6 +137,7 @@ export default function ShadowingApp() {
       window.speechSynthesis.speak(new SpeechSynthesisUtterance(" "));
       await new Promise(resolve => setTimeout(resolve, 500));
 
+      // 日本語
       await new Promise((resolve) => {
         const utJa = new SpeechSynthesisUtterance(currentPhrase.ja);
         utJa.lang = "ja-JP";
@@ -146,28 +147,29 @@ export default function ShadowingApp() {
       });
 
       if (isCancelled) return;
-      // ⭐️ 待機時間を2秒に変更
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      await new Promise((resolve) => setTimeout(resolve, 2000)); // 2秒
       if (isCancelled) return;
 
+      // 【Bluetooth対策】
       window.speechSynthesis.speak(new SpeechSynthesisUtterance(" "));
       await new Promise(resolve => setTimeout(resolve, 500));
 
+      // 英語（サマンサ指名！）
       await new Promise((resolve) => {
         const utEn = new SpeechSynthesisUtterance(currentPhrase.en);
         const voices = window.speechSynthesis.getVoices();
-        const preferredVoice = voices.find(v => v.name.includes("Google") || v.name.includes("Samantha"));
-        if (preferredVoice) utEn.voice = preferredVoice;
+        // ★ ここで爆速サマンサを探す
+        const bestVoice = voices.find(v => v.name.includes("Samantha")) || voices.find(v => v.lang === "en-US");
+        if (bestVoice) utEn.voice = bestVoice;
         utEn.lang = "en-US";
-        utEn.rate = 0.8;
+        utEn.rate = 0.85;
         utEn.onend = resolve;
         utEn.onerror = resolve;
         if (!isCancelled) window.speechSynthesis.speak(utEn);
       });
 
       if (isCancelled) return;
-      // ⭐️ 待機時間を2秒に変更
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      await new Promise((resolve) => setTimeout(resolve, 2000)); // 2秒
       if (isCancelled) return;
 
       if (currentIndex < PHRASES.length - 1) {
@@ -184,9 +186,9 @@ export default function ShadowingApp() {
   }, [currentIndex, isPlaying]);
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-32">
+    <div className="min-h-screen bg-gray-50 pb-32 font-sans">
       <div className="bg-white border-b sticky top-0 z-10 p-4 shadow-sm text-center">
-        <h1 className="text-xl font-bold text-blue-600">SHADOWING 100 (2s Ver.)</h1>
+        <h1 className="text-xl font-bold text-blue-600">SHADOWING 100 (Samantha 2s)</h1>
         <div className="text-xs text-gray-500 mt-1">Progress: {Object.values(completed).filter(Boolean).length} / {PHRASES.length}</div>
       </div>
       <div className="max-w-md mx-auto p-4 space-y-4">
@@ -199,15 +201,15 @@ export default function ShadowingApp() {
                 <CheckCircle2 size={24} />
               </button>
             </div>
-            <p className="text-gray-600 text-sm">{phrase.ja}</p>
-            <p className="text-lg font-bold text-gray-900">{phrase.en}</p>
+            <p className="text-gray-600 text-sm mb-1">{phrase.ja}</p>
+            <p className="text-lg font-bold text-gray-900 leading-tight">{phrase.en}</p>
           </div>
         ))}
       </div>
-      <div className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md border-t p-6 flex flex-col items-center">
+      <div className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md border-t p-6 flex flex-col items-center shadow-2xl">
         <div className="flex items-center gap-8 mb-4">
           <button onClick={() => { setCurrentIndex(0); setIsPlaying(false); }} className="text-gray-400"><RefreshCcw size={28} /></button>
-          <button onClick={() => setIsPlaying(!isPlaying)} className={`w-16 h-16 rounded-full flex items-center justify-center transition-all ${isPlaying ? "bg-red-500" : "bg-blue-600 text-white"}`}>
+          <button onClick={() => setIsPlaying(!isPlaying)} className={`w-16 h-16 rounded-full flex items-center justify-center transition-all ${isPlaying ? "bg-red-500 shadow-red-200" : "bg-blue-600 text-white shadow-blue-200 shadow-lg"}`}>
             {isPlaying ? <Square size={32} fill="white" /> : <Play size={32} fill="white" className="ml-1" />}
           </button>
         </div>
