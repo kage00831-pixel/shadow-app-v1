@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Play, Square, CheckCircle2, Circle, RefreshCcw } from "lucide-react";
 
-// ⭐️ 1番から100番まで、すべて揃ったフルデータです
 const PHRASES = [
   { ja: "最近何も思い通りにいかない", en: "Things just haven't been going my way lately.", point: "have been + ing (最近ずっと〜)" },
   { ja: "彼女はどうしてやる気が続かないの？", en: "Why can’t she stay motivated?", point: "stay motivated = やる気を維持する" },
@@ -132,41 +131,32 @@ export default function ShadowingApp() {
     const playSequence = async () => {
       if (!isPlaying) return;
       window.speechSynthesis.cancel();
-
       const currentPhrase = PHRASES[currentIndex];
 
-      // 【Bluetooth対策】予備信号
+      // 【Bluetooth対策】
       window.speechSynthesis.speak(new SpeechSynthesisUtterance(" "));
       await new Promise(resolve => setTimeout(resolve, 500));
 
-      // ① 日本語を再生
       await new Promise((resolve) => {
         const utJa = new SpeechSynthesisUtterance(currentPhrase.ja);
         utJa.lang = "ja-JP";
-        utJa.rate = 1.0;
         utJa.onend = resolve;
         utJa.onerror = resolve;
         if (!isCancelled) window.speechSynthesis.speak(utJa);
       });
 
       if (isCancelled) return;
-      await new Promise((resolve) => setTimeout(resolve, 3000));
+      // ⭐️ 待機時間を2秒に変更
+      await new Promise((resolve) => setTimeout(resolve, 2000));
       if (isCancelled) return;
 
-      // 【Bluetooth対策】予備信号
       window.speechSynthesis.speak(new SpeechSynthesisUtterance(" "));
       await new Promise(resolve => setTimeout(resolve, 500));
 
-      // ② 英語を再生
       await new Promise((resolve) => {
         const utEn = new SpeechSynthesisUtterance(currentPhrase.en);
         const voices = window.speechSynthesis.getVoices();
-        const preferredVoice = voices.find(v => 
-          (v.name.includes("Google") && v.lang === "en-US") || 
-          (v.name.includes("Samantha") && v.lang === "en-US") ||
-          (v.name.includes("Female") && v.lang === "en-US")
-        );
-
+        const preferredVoice = voices.find(v => v.name.includes("Google") || v.name.includes("Samantha"));
         if (preferredVoice) utEn.voice = preferredVoice;
         utEn.lang = "en-US";
         utEn.rate = 0.8;
@@ -176,7 +166,8 @@ export default function ShadowingApp() {
       });
 
       if (isCancelled) return;
-      await new Promise((resolve) => setTimeout(resolve, 3000));
+      // ⭐️ 待機時間を2秒に変更
+      await new Promise((resolve) => setTimeout(resolve, 2000));
       if (isCancelled) return;
 
       if (currentIndex < PHRASES.length - 1) {
@@ -186,77 +177,40 @@ export default function ShadowingApp() {
       }
     };
 
-    if (isPlaying) {
-      playSequence();
-    } else {
-      window.speechSynthesis.cancel();
-    }
+    if (isPlaying) playSequence();
+    else window.speechSynthesis.cancel();
 
-    return () => {
-      isCancelled = true;
-      window.speechSynthesis.cancel();
-    };
+    return () => { isCancelled = true; window.speechSynthesis.cancel(); };
   }, [currentIndex, isPlaying]);
 
   return (
     <div className="min-h-screen bg-gray-50 pb-32">
       <div className="bg-white border-b sticky top-0 z-10 p-4 shadow-sm text-center">
-        <h1 className="text-xl font-bold text-blue-600">SHADOWING 100</h1>
-        <div className="text-xs text-gray-500 mt-1">
-          Progress: {Object.values(completed).filter(Boolean).length} / {PHRASES.length}
-        </div>
+        <h1 className="text-xl font-bold text-blue-600">SHADOWING 100 (2s Ver.)</h1>
+        <div className="text-xs text-gray-500 mt-1">Progress: {Object.values(completed).filter(Boolean).length} / {PHRASES.length}</div>
       </div>
-
       <div className="max-w-md mx-auto p-4 space-y-4">
         {PHRASES.map((phrase, index) => (
-          <div
-            key={index}
-            onClick={() => {
-              setCurrentIndex(index);
-              setIsPlaying(true);
-            }}
-            className={`p-5 rounded-2xl border-2 transition-all cursor-pointer ${
-              currentIndex === index
-                ? "border-blue-500 bg-blue-50 shadow-md"
-                : "border-white bg-white shadow-sm hover:border-gray-200"
-            }`}
-          >
+          <div key={index} onClick={() => { setCurrentIndex(index); setIsPlaying(true); }}
+            className={`p-5 rounded-2xl border-2 transition-all cursor-pointer ${currentIndex === index ? "border-blue-500 bg-blue-50" : "border-white bg-white shadow-sm"}`}>
             <div className="flex justify-between items-start mb-2">
               <span className="text-xs font-bold text-blue-400">#{index + 1}</span>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggleComplete(index);
-                }}
-                className={`p-1 rounded-full ${completed[index] ? "text-green-500" : "text-gray-300"}`}
-              >
-                {completed[index] ? <CheckCircle2 size={24} /> : <Circle size={24} />}
+              <button onClick={(e) => { e.stopPropagation(); toggleComplete(index); }} className={completed[index] ? "text-green-500" : "text-gray-300"}>
+                <CheckCircle2 size={24} />
               </button>
             </div>
-            <p className="text-gray-600 text-sm mb-1">{phrase.ja}</p>
-            <p className="text-lg font-bold text-gray-900 leading-tight mb-2">{phrase.en}</p>
-            {phrase.point && (
-              <p className="text-xs text-blue-600 bg-blue-100/50 p-2 rounded-lg inline-block">💡 {phrase.point}</p>
-            )}
+            <p className="text-gray-600 text-sm">{phrase.ja}</p>
+            <p className="text-lg font-bold text-gray-900">{phrase.en}</p>
           </div>
         ))}
       </div>
-
-      <div className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md border-t p-6 flex flex-col items-center shadow-lg">
+      <div className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md border-t p-6 flex flex-col items-center">
         <div className="flex items-center gap-8 mb-4">
-          <button onClick={() => { setCurrentIndex(0); setIsPlaying(false); }} className="text-gray-400 hover:text-blue-500">
-            <RefreshCcw size={28} />
-          </button>
-          <button
-            onClick={() => setIsPlaying(!isPlaying)}
-            className={`w-16 h-16 rounded-full flex items-center justify-center transition-all shadow-lg ${
-              isPlaying ? "bg-red-500" : "bg-blue-600 text-white"
-            }`}
-          >
+          <button onClick={() => { setCurrentIndex(0); setIsPlaying(false); }} className="text-gray-400"><RefreshCcw size={28} /></button>
+          <button onClick={() => setIsPlaying(!isPlaying)} className={`w-16 h-16 rounded-full flex items-center justify-center transition-all ${isPlaying ? "bg-red-500" : "bg-blue-600 text-white"}`}>
             {isPlaying ? <Square size={32} fill="white" /> : <Play size={32} fill="white" className="ml-1" />}
           </button>
         </div>
-        <div className="text-sm font-medium text-gray-700">{isPlaying ? "Now Playing..." : "Stopped"}</div>
       </div>
     </div>
   );
