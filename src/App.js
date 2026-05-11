@@ -93,4 +93,171 @@ const PHRASES = [
   { ja: "しばらくルーティンとして続けるつもりだよ", en: "I’ll keep doing it as a routine for a while.", point: "keep doing（し続ける）" },
   { ja: "最後までやり遂げるよ", en: "I’ll see it through.", point: "see it through（やり遂げる）" },
   { ja: "思ったほど混んでなかったよ", en: "It wasn’t as crowded as I thought.", point: "not as ~ as（思ったほど〜ない）" },
-  { ja: "思ったより良かったよ", en
+  { ja: "思ったより良かったよ", en: "It was better than I thought.", point: "better than（〜より良い）" },
+  { ja: "忙しいと思ってたけど、そうでもなかった", en: "I figured it’d be busy, but it wasn’t.", point: "予想と結果" },
+  { ja: "空気感が他とは違うよね", en: "The atmosphere feels different from other places.", point: "atmosphere（空気感）" },
+  { ja: "自分で時間を管理できるんだ", en: "I can manage my own time.", point: "manage time（時間を管理する）" },
+  { ja: "それがまさに言いたかったことだよ", en: "That’s exactly what I wanted to say.", point: "what I wanted to say" },
+  { ja: "これまでで一番遠い場所だったよ", en: "It was the farthest place I’ve ever been to.", point: "the farthest（一番遠い）" },
+  { ja: "これまでで最高の食事だったよ", en: "It was the best meal I’ve ever had.", point: "the best I've ever had" },
+  { ja: "焦る必要はないよ。自分のペースでいこう。", en: "No need to rush. Just go at your own pace.", point: "at your own pace" },
+  { ja: "また明日会いましょう", en: "See you tomorrow.", point: "挨拶の基本" },
+  { ja: "ついに100番まで来たね！おめでとう！", en: "You finally made it to number 100! Congratulations!", point: "達成の表現" },
+];
+
+export default function ShadowingApp() {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [completed, setCompleted] = useState({});
+
+  useEffect(() => {
+    const saved = localStorage.getItem("shadowing-progress");
+    if (saved) setCompleted(JSON.parse(saved));
+    window.speechSynthesis.getVoices();
+  }, []);
+
+  const saveProgress = (newCompleted) => {
+    setCompleted(newCompleted);
+    localStorage.setItem("shadowing-progress", JSON.stringify(newCompleted));
+  };
+
+  const toggleComplete = (index) => {
+    const newCompleted = { ...completed, [index]: !completed[index] };
+    saveProgress(newCompleted);
+  };
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    const playSequence = async () => {
+      if (!isPlaying) return;
+      window.speechSynthesis.cancel();
+
+      const currentPhrase = PHRASES[currentIndex];
+
+      // 【Bluetooth対策】予備信号
+      window.speechSynthesis.speak(new SpeechSynthesisUtterance(" "));
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // ① 日本語を再生
+      await new Promise((resolve) => {
+        const utJa = new SpeechSynthesisUtterance(currentPhrase.ja);
+        utJa.lang = "ja-JP";
+        utJa.rate = 1.0;
+        utJa.onend = resolve;
+        utJa.onerror = resolve;
+        if (!isCancelled) window.speechSynthesis.speak(utJa);
+      });
+
+      if (isCancelled) return;
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+      if (isCancelled) return;
+
+      // 【Bluetooth対策】予備信号
+      window.speechSynthesis.speak(new SpeechSynthesisUtterance(" "));
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // ② 英語を再生
+      await new Promise((resolve) => {
+        const utEn = new SpeechSynthesisUtterance(currentPhrase.en);
+        const voices = window.speechSynthesis.getVoices();
+        const preferredVoice = voices.find(v => 
+          (v.name.includes("Google") && v.lang === "en-US") || 
+          (v.name.includes("Samantha") && v.lang === "en-US") ||
+          (v.name.includes("Female") && v.lang === "en-US")
+        );
+
+        if (preferredVoice) utEn.voice = preferredVoice;
+        utEn.lang = "en-US";
+        utEn.rate = 0.8;
+        utEn.onend = resolve;
+        utEn.onerror = resolve;
+        if (!isCancelled) window.speechSynthesis.speak(utEn);
+      });
+
+      if (isCancelled) return;
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+      if (isCancelled) return;
+
+      if (currentIndex < PHRASES.length - 1) {
+        setCurrentIndex((prev) => prev + 1);
+      } else {
+        setIsPlaying(false);
+      }
+    };
+
+    if (isPlaying) {
+      playSequence();
+    } else {
+      window.speechSynthesis.cancel();
+    }
+
+    return () => {
+      isCancelled = true;
+      window.speechSynthesis.cancel();
+    };
+  }, [currentIndex, isPlaying]);
+
+  return (
+    <div className="min-h-screen bg-gray-50 pb-32">
+      <div className="bg-white border-b sticky top-0 z-10 p-4 shadow-sm text-center">
+        <h1 className="text-xl font-bold text-blue-600">SHADOWING 100</h1>
+        <div className="text-xs text-gray-500 mt-1">
+          Progress: {Object.values(completed).filter(Boolean).length} / {PHRASES.length}
+        </div>
+      </div>
+
+      <div className="max-w-md mx-auto p-4 space-y-4">
+        {PHRASES.map((phrase, index) => (
+          <div
+            key={index}
+            onClick={() => {
+              setCurrentIndex(index);
+              setIsPlaying(true);
+            }}
+            className={`p-5 rounded-2xl border-2 transition-all cursor-pointer ${
+              currentIndex === index
+                ? "border-blue-500 bg-blue-50 shadow-md"
+                : "border-white bg-white shadow-sm hover:border-gray-200"
+            }`}
+          >
+            <div className="flex justify-between items-start mb-2">
+              <span className="text-xs font-bold text-blue-400">#{index + 1}</span>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleComplete(index);
+                }}
+                className={`p-1 rounded-full ${completed[index] ? "text-green-500" : "text-gray-300"}`}
+              >
+                {completed[index] ? <CheckCircle2 size={24} /> : <Circle size={24} />}
+              </button>
+            </div>
+            <p className="text-gray-600 text-sm mb-1">{phrase.ja}</p>
+            <p className="text-lg font-bold text-gray-900 leading-tight mb-2">{phrase.en}</p>
+            {phrase.point && (
+              <p className="text-xs text-blue-600 bg-blue-100/50 p-2 rounded-lg inline-block">💡 {phrase.point}</p>
+            )}
+          </div>
+        ))}
+      </div>
+
+      <div className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md border-t p-6 flex flex-col items-center shadow-lg">
+        <div className="flex items-center gap-8 mb-4">
+          <button onClick={() => { setCurrentIndex(0); setIsPlaying(false); }} className="text-gray-400 hover:text-blue-500">
+            <RefreshCcw size={28} />
+          </button>
+          <button
+            onClick={() => setIsPlaying(!isPlaying)}
+            className={`w-16 h-16 rounded-full flex items-center justify-center transition-all shadow-lg ${
+              isPlaying ? "bg-red-500" : "bg-blue-600 text-white"
+            }`}
+          >
+            {isPlaying ? <Square size={32} fill="white" /> : <Play size={32} fill="white" className="ml-1" />}
+          </button>
+        </div>
+        <div className="text-sm font-medium text-gray-700">{isPlaying ? "Now Playing..." : "Stopped"}</div>
+      </div>
+    </div>
+  );
+}
