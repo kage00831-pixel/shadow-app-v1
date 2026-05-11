@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Play, Square, CheckCircle2, Circle, RefreshCcw } from "lucide-react";
 
-// 魂の100フレーズ完全版データ（ここを100個すべて保持しています）
+// 100フレーズデータ
 const PHRASES = [
   { ja: "最近何も思い通りにいかない", en: "Things just haven't been going my way lately.", point: "have been + ing (最近ずっと〜)" },
   { ja: "彼女はどうしてやる気が続かないの？", en: "Why can’t she stay motivated?", point: "stay motivated = やる気を維持する" },
@@ -113,7 +113,6 @@ export default function ShadowingApp() {
   useEffect(() => {
     const saved = localStorage.getItem("shadowing-progress");
     if (saved) setCompleted(JSON.parse(saved));
-    // 最初の声のリストを読み込んでおく（ブラウザ対策）
     window.speechSynthesis.getVoices();
   }, []);
 
@@ -127,7 +126,6 @@ export default function ShadowingApp() {
     saveProgress(newCompleted);
   };
 
-  // ⭐️ 音声ロジック：綺麗な女性の声を選択する版
   useEffect(() => {
     let isCancelled = false;
 
@@ -148,15 +146,14 @@ export default function ShadowingApp() {
       });
 
       if (isCancelled) return;
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      // ⭐️ 日本語と英語の間の待機時間を 3秒 に変更
+      await new Promise((resolve) => setTimeout(resolve, 3000));
       if (isCancelled) return;
 
-      // ② 英語を再生（高品質な女性声を選択）
+      // ② 英語を再生
       await new Promise((resolve) => {
         const utEn = new SpeechSynthesisUtterance(currentPhrase.en);
         const voices = window.speechSynthesis.getVoices();
-        
-        // 綺麗な声（Google, Samantha, Victoriaなど）を探す
         const preferredVoice = voices.find(v => 
           (v.name.includes("Google") && v.lang === "en-US") || 
           (v.name.includes("Samantha") && v.lang === "en-US") ||
@@ -173,7 +170,8 @@ export default function ShadowingApp() {
       });
 
       if (isCancelled) return;
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      // ⭐️ 英語と次の日本語の間の待機時間を 3秒 に変更
+      await new Promise((resolve) => setTimeout(resolve, 3000));
       if (isCancelled) return;
 
       if (currentIndex < PHRASES.length - 1) {
@@ -197,7 +195,6 @@ export default function ShadowingApp() {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-32">
-      {/* Header */}
       <div className="bg-white border-b sticky top-0 z-10 p-4 shadow-sm text-center">
         <h1 className="text-xl font-bold text-blue-600">SHADOWING 100</h1>
         <div className="text-xs text-gray-500 mt-1">
@@ -205,7 +202,6 @@ export default function ShadowingApp() {
         </div>
       </div>
 
-      {/* List */}
       <div className="max-w-md mx-auto p-4 space-y-4">
         {PHRASES.map((phrase, index) => (
           <div
@@ -241,7 +237,6 @@ export default function ShadowingApp() {
         ))}
       </div>
 
-      {/* Fixed Footer Controls */}
       <div className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md border-t p-6 flex flex-col items-center shadow-lg">
         <div className="flex items-center gap-8 mb-4">
           <button onClick={() => { setCurrentIndex(0); setIsPlaying(false); }} className="text-gray-400 hover:text-blue-500">
